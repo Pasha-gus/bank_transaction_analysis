@@ -1,7 +1,10 @@
 import json
-import pandas as pd
 import logging
-from src.utils import greeting_by_time_of_day, top_transaction_payment_amount, exchange_rates, get_card_data, get_actions_data, transaction_data_excel
+
+import pandas as pd
+
+from src.utils import (exchange_rates, get_actions_data, get_card_data, greeting_by_time_of_day,
+                       top_transaction_payment_amount)
 
 logger = logging.getLogger("views")
 logger.setLevel(logging.INFO)
@@ -30,7 +33,7 @@ def main_views(transactions_df: pd.DataFrame) -> str:
         "card_data": card_data,
         "top_transactions": top_transactions,
         "currency_rates": currency_rates,
-        "stock_prices": stock_prices
+        "stock_prices": stock_prices,
     }
 
     return json.dumps(result, ensure_ascii=False, indent=4)
