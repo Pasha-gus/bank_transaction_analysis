@@ -1,10 +1,10 @@
 import logging
+import os
 from datetime import datetime
+
+import pandas as pd
 import requests
 from dotenv import load_dotenv
-import os
-import pandas as pd
-
 
 load_dotenv()
 api_key_currency = os.getenv("APILAYER_API_KEY")
@@ -19,7 +19,7 @@ file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
 
-def transaction_data_excel(path_file: str) -> list:
+def transaction_data_excel(path_file: str):
     try:
         logger.info(f"Считываем содержимое файла {path_file}")
         excel_data = pd.read_excel(path_file)
@@ -54,8 +54,6 @@ def greeting_by_time_of_day():
         return "Доброй ночи"
 
 
-
-
 def top_transaction_payment_amount(transactions_df: pd.DataFrame) -> list[dict]:
     """
     Возвращает топ-5 транзакций с наибольшими суммами платежей.
@@ -70,10 +68,7 @@ def top_transaction_payment_amount(transactions_df: pd.DataFrame) -> list[dict]:
     # Сортировка DataFrame по столбцу "Сумма платежа" в порядке убывания и получение топ-5
     top_transactions_df = transactions_df.sort_values(by="Сумма платежа", ascending=False).head(5)
     # Преобразование DataFrame в список словарей
-    return top_transactions_df.to_dict(orient='records')
-
-
-
+    return top_transactions_df.to_dict(orient="records")
 
 
 def exchange_rates():
@@ -83,9 +78,7 @@ def exchange_rates():
     for currency in currency_list:
         url = f"https://api.apilayer.com/exchangerates_data/convert?to=RUB&from={currency}&amount=1"
 
-        headers = {
-            "apikey": api_key_currency
-        }
+        headers = {"apikey": api_key_currency}
 
         response = requests.get(url, headers=headers)
 
@@ -102,7 +95,6 @@ def exchange_rates():
     return currency_rates
 
 
-
 def get_card_data(df: pd.DataFrame) -> list[dict]:
     """
     Получает данные о расходах с карт и рассчитывает кешбэк по последним 4 цифрам номера карты.
@@ -112,24 +104,18 @@ def get_card_data(df: pd.DataFrame) -> list[dict]:
     list[dict]: Список словарей с общей суммой расходов и кешбэком для каждой карты.
     """
     # Преобразуем колонки с суммами в числовой формат
-    df['Сумма операции'] = df['Сумма операции'].astype(str).str.replace(',', '.', regex=False).astype(float)
-    expenses_df = df[df['Сумма операции'] < 0].copy()
+    df["Сумма операции"] = df["Сумма операции"].astype(str).str.replace(",", ".", regex=False).astype(float)
+    expenses_df = df[df["Сумма операции"] < 0].copy()
     # Извлекаем последние 4 цифры номера карты
-    expenses_df['Последние 4 цифры'] = expenses_df['Номер карты'].str.extract('(\d{4})', expand=False)
+    expenses_df["Последние 4 цифры"] = expenses_df["Номер карты"].str.extract("(\d{4})", expand=False)
     # Группируем по последним 4 цифрам карты и суммируем расходы
-    cashback_df = (
-        expenses_df.groupby('Последние 4 цифры', as_index=False)
-        .agg({'Сумма операции': 'sum'})
-    )
+    cashback_df = expenses_df.groupby("Последние 4 цифры", as_index=False).agg({"Сумма операции": "sum"})
     # Рассчитываем кешбэк (1 рубль на каждые 100 рублей)
-    cashback_df['Кешбэк'] = (cashback_df['Сумма операции'].abs() // 100).astype(int)
+    cashback_df["Кешбэк"] = (cashback_df["Сумма операции"].abs() // 100).astype(int)
     # Переименовываем колонки для ясности
-    cashback_df.rename(columns={'Сумма операции': 'Общая сумма расходов'}, inplace=True)
+    cashback_df.rename(columns={"Сумма операции": "Общая сумма расходов"}, inplace=True)
     # Возвращаем список словарей
-    return cashback_df.to_dict(orient='records')
-
-
-
+    return cashback_df.to_dict(orient="records")
 
 
 def get_actions_data():
@@ -148,11 +134,10 @@ def get_actions_data():
                 daily_data = result["Time Series (Daily)"]
                 # Получаем самую последнюю дату
                 latest_date = max(daily_data.keys())
-                closing_price = daily_data[latest_date]['4. close']
-                stock_prices.append({
-                    "stock": action,
-                    "price": float(closing_price)  # Преобразуем в float для удобства
-                })
+                closing_price = daily_data[latest_date]["4. close"]
+                stock_prices.append(
+                    {"stock": action, "price": float(closing_price)}  # Преобразуем в float для удобства
+                )
             else:
                 print(f"Ошибка получения данных. {action}: {result.get('Error Message')}")
         else:
